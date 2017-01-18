@@ -3,8 +3,9 @@ import numpy as np
 import datetime as dt
 from data_loader import dl
 
+
 learning_rate = 0.001
-training_epochs = 40
+training_epochs = 20
 batch_size = 100
 
 display_step = 50
@@ -12,7 +13,8 @@ model_name = 'basic_vcnn'
 train_filename = 'ModelNet10_binvox_30_train.npz'
 input_dim = 30
 
-model_name_with_metadata = model_name + '_' + train_filename + '_' + str(dt.datetime.utcnow()).replace(' ', '_').split('.')[0]
+model_name_with_metadata = model_name + '_' + train_filename.split('.')[0] + '_' \
+                           + str(dt.datetime.utcnow()).replace(' ', '_').split('.')[0]
 train_logs_path = '/tmp/tensorflow_logs/' + model_name_with_metadata + '_train'
 valid_logs_path = '/tmp/tensorflow_logs/' + model_name_with_metadata + '_valid'
 model_path = model_name_with_metadata + '.ckpt'
@@ -144,11 +146,11 @@ def main(_):
         accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
 
     # Initializing the variables
-    init = tf.initialize_all_variables()
+    init = tf.global_variables_initializer()
 
-    tf.scalar_summary("loss", cost)
-    tf.scalar_summary("accuracy", accuracy)
-    merged_summary_op = tf.merge_all_summaries()
+    tf.summary.scalar("loss", cost)
+    tf.summary.scalar("accuracy", accuracy)
+    merged_summary_op = tf.summary.merge_all()
 
     # Launch the graph
     with tf.Session() as sess:
@@ -161,7 +163,7 @@ def main(_):
         # Keep training until reach max iterations
         batches_per_epoch = dl.n_train / batch_size
         n_batches = batches_per_epoch * training_epochs
-        print 'Number of batches {0}'.format(n_batches)
+        print('Number of batches {0}'.format(n_batches))
         while step < n_batches:
             batch_x, batch_y = dl.next_train_batch(batch_size)
             # Run optimization op (backprop)
@@ -186,7 +188,7 @@ def main(_):
                     valid_batch_cost, valid_batch_acc = sess.run([cost, accuracy], feed_dict={x: batch_x, y: batch_y})
                     valid_cost += valid_batch_cost * batch_x.shape[0] / dl.n_valid
                     valid_acc += valid_batch_acc * batch_x.shape[0] / dl.n_valid
-                    
+
                 valid_summary = tf.Summary()
                 valid_summary.value.add(tag="accuracy", simple_value=valid_acc)
                 valid_summary.value.add(tag="loss", simple_value=valid_cost)
@@ -196,8 +198,8 @@ def main(_):
             step += 1
 
         saver = tf.train.Saver()
-        saver.save(sess, model_path)
-        print("---Final model saved in file: " + model_path)
+        save_path = saver.save(sess, model_path)
+        print("---Final model saved in file: " + save_path)
 
 if __name__ == '__main__':
     tf.app.run()

@@ -1,5 +1,6 @@
 import numpy as np
 import time
+import csv
 from random import shuffle
 
 
@@ -25,6 +26,14 @@ class DataLoader:
     def __init__(self):
         pass
 
+    def load_label_file(self, label_filename):
+        labels = []
+        with open(label_filename, 'rb') as csvfile:
+            reader = csv.reader(csvfile, delimiter=',')
+            for row in reader:
+                labels.append(row[1])
+        return labels
+
     def prepare_train_val_data(self, train_filename, train_ratio):
         data = np.load(train_filename)
         x = data['x']
@@ -40,7 +49,7 @@ class DataLoader:
         valid_indices = []
         for label in range(0, n_labels):
             label_indices = np.squeeze(np.argwhere(y == label))
-            n_train_in_label = len(label_indices) * train_ratio
+            n_train_in_label = int(len(label_indices) * train_ratio)
             train_indices.extend(label_indices[:n_train_in_label])
             valid_indices.extend(label_indices[n_train_in_label:])
 
@@ -62,7 +71,7 @@ class DataLoader:
 
         end_time = time.time()
 
-        print 'Finished preparing training and validation sets. Took {0}s'.format(end_time - start_time)
+        print('Finished preparing training and validation sets. Took {0}s'.format(end_time - start_time))
 
         print('train shape')
         print(self.train_x.shape)
