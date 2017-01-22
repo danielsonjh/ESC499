@@ -56,6 +56,8 @@ class DataLoader:
         # Shuffle training data
         shuffle(train_indices)
 
+        print('bincounts:')
+        print(np.bincount(y))
         self.train_x = x[train_indices]
         self.train_y = y[train_indices]
         print(np.bincount(self.train_y))

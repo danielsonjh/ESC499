@@ -1,41 +1,34 @@
+import sys
 import tensorflow as tf
 import numpy as np
 import datetime as dt
 from data_loader import dl
 
-
-learning_rate = 0.001
-training_epochs = 20
+learning_rate = 0.01
+training_epochs = 200
 batch_size = 100
 
 display_step = 50
 model_name = 'basic_vcnn'
-train_filename = 'ModelNet10_binvox_30_train.npz'
 input_dim = 30
 
-model_name_with_metadata = model_name + '_' + train_filename.split('.')[0] + '_' \
-                           + str(dt.datetime.utcnow()).replace(' ', '_').split('.')[0]
-train_logs_path = '/tmp/tensorflow_logs/' + model_name_with_metadata + '_train'
-valid_logs_path = '/tmp/tensorflow_logs/' + model_name_with_metadata + '_valid'
-model_path = model_name_with_metadata + '.ckpt'
 
-
-def basic_vcnn():
+def basic_vcnn(n_labels):
     x = tf.placeholder(tf.float32, [None, input_dim, input_dim, input_dim])
-    y = tf.placeholder(tf.float32, [None, 10])
+    y = tf.placeholder(tf.float32, [None, n_labels])
 
     weights = {
         'c1': tf.Variable(tf.random_normal([5, 5, 5, 1, 32]), name='wc1'),
         'c2': tf.Variable(tf.random_normal([3, 3, 3, 32, 32]), name='wc2'),
-        'fc1': tf.Variable(tf.random_normal([8 * 8 * 8 * 32, 128]), name='wfc2'),
-        'fc2': tf.Variable(tf.random_normal([128, 10]), name='wfc2'),
+        'fc1': tf.Variable(tf.random_normal([8 * 8 * 8 * 32, 256]), name='wfc1'),
+        'fc2': tf.Variable(tf.random_normal([256, n_labels]), name='wfc2'),
     }
 
     biases = {
-        'c1': tf.Variable(tf.random_normal([weights['c1'].get_shape().as_list()[4]]), name='bc1'),
-        'c2': tf.Variable(tf.random_normal([weights['c2'].get_shape().as_list()[4]]), name='bc2'),
-        'fc1': tf.Variable(tf.random_normal([weights['fc1'].get_shape().as_list()[1]]), name='bfc1'),
-        'fc2': tf.Variable(tf.random_normal([weights['fc2'].get_shape().as_list()[1]]), name='bfc2'),
+        'c1': tf.Variable(tf.random_normal([weights['c1'].get_shape().as_list()[-1]]), name='bc1'),
+        'c2': tf.Variable(tf.random_normal([weights['c2'].get_shape().as_list()[-1]]), name='bc2'),
+        'fc1': tf.Variable(tf.random_normal([weights['fc1'].get_shape().as_list()[-1]]), name='bfc1'),
+        'fc2': tf.Variable(tf.random_normal([weights['fc2'].get_shape().as_list()[-1]]), name='bfc2'),
     }
 
     # Reshape input
@@ -126,12 +119,12 @@ def mlpconv2d(x, weight, bias, strides):
     return x
 
 
-def main(_):
+def main(n_labels):
 
     dl.prepare_train_val_data(train_filename, train_ratio=0.9)
 
     # Construct model
-    x, y, weights, biases, pred = basic_vcnn()
+    x, y, weights, biases, pred = basic_vcnn(n_labels)
 
     # Define loss and optimizer
     with tf.name_scope('Loss'):
@@ -201,5 +194,15 @@ def main(_):
         save_path = saver.save(sess, model_path)
         print("---Final model saved in file: " + save_path)
 
+
 if __name__ == '__main__':
-    tf.app.run()
+    train_filename = sys.argv[1]
+    n_labels = int(sys.argv[2])
+
+    model_name_with_metadata = model_name + '_' + train_filename.split('.')[0] + '_' \
+                               + str(dt.datetime.utcnow()).replace(' ', '_').split('.')[0]
+    train_logs_path = '/tmp/tensorflow_logs/' + model_name_with_metadata + '_train'
+    valid_logs_path = '/tmp/tensorflow_logs/' + model_name_with_metadata + '_valid'
+    model_path = model_name_with_metadata + '.ckpt'
+
+    main(n_labels)

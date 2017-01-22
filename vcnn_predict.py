@@ -2,15 +2,17 @@ import sys
 import numpy as np
 import tensorflow as tf
 from data_loader import dl
-from vcnn_train import batch_size, basic_vcnn, model_path
+from vcnn_train import batch_size, basic_vcnn
 
 
 test_filename = sys.argv[1]
 model_filename = './' + sys.argv[2]
+n_labels = int(sys.argv[3])
+
 
 def main():
     dl.prepare_test_data(test_filename)
-    x, y, weights, biases, pred = basic_vcnn()
+    x, y, weights, biases, pred = basic_vcnn(n_labels)
     saver = tf.train.Saver()
 
     with tf.Session() as sess:
@@ -49,9 +51,15 @@ def main():
         print(incorrect_cases_x.shape)
         print(incorrect_cases_pred.shape)
 
-        save_path = model_filename.split('.ckpt')[0] + '_incorrect_pred.npz'
-        np.savez_compressed(save_path, x=incorrect_cases_x, y=incorrect_cases_y, pred=incorrect_cases_pred)
-        print('Saved incorrect predictions in :' + save_path)
+        print('Weights')
+        for key in weights.iterkeys():
+            weights[key] = weights[key].eval()
+            print(key + ': ' + str(weights[key].shape))
+
+        save_path = model_filename.split('.ckpt')[0] + '_predict.npz'
+        np.savez_compressed(save_path, weights=weights, incorrect_cases_x=incorrect_cases_x,
+                            incorrect_cases_y=incorrect_cases_y, incorrect_cases_pred=incorrect_cases_pred)
+        print('Saved prediction info in :' + save_path)
 
         print("Accuracy= " + "{:.5f}".format(acc))
 

@@ -7,16 +7,16 @@ from data_loader import dl
 
 test_filename = sys.argv[1]
 label_filename = sys.argv[2]
-incorrect_pred_filename = sys.argv[3]
+predict_filename = sys.argv[3]
 
 n_shown = 5
 
 dl.prepare_test_data(test_filename)
 labels = dl.load_label_file(label_filename)
-data = np.load(incorrect_pred_filename)
-x = data['x']
-y = data['y']
-pred = data['pred']
+data = np.load(predict_filename)
+x = data['incorrect_cases_x']
+y = data['incorrect_cases_y']
+pred = data['incorrect_cases_pred']
 
 length = x.shape[0]
 random_indices = random.sample(range(0, length), n_shown)
