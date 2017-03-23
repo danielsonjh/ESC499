@@ -5,6 +5,7 @@ import os
 
 input_dir = '../ModelNet10_binvox_60'
 
+
 def extract_data(path_prefix, set_name):
     data = []
     folder_name = path_prefix + set_name

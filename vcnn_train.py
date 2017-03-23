@@ -4,12 +4,11 @@ import numpy as np
 import datetime as dt
 from data_loader import dl
 
-learning_rate = 0.01
-training_epochs = 200
-batch_size = 100
+learning_rate = 0.001
+training_epochs = 50
+batch_size = 64
 
 display_step = 50
-model_name = 'basic_vcnn'
 input_dim = 30
 
 
@@ -19,9 +18,9 @@ def basic_vcnn(n_labels):
 
     weights = {
         'c1': tf.Variable(tf.random_normal([5, 5, 5, 1, 32]), name='wc1'),
-        'c2': tf.Variable(tf.random_normal([3, 3, 3, 32, 32]), name='wc2'),
-        'fc1': tf.Variable(tf.random_normal([8 * 8 * 8 * 32, 256]), name='wfc1'),
-        'fc2': tf.Variable(tf.random_normal([256, n_labels]), name='wfc2'),
+        'c2': tf.Variable(tf.random_normal([3, 3, 3, 32, 64]), name='wc2'),
+        'fc1': tf.Variable(tf.random_normal([8 * 8 * 8 * 64, 512]), name='wfc1'),
+        'fc2': tf.Variable(tf.random_normal([512, n_labels]), name='wfc2'),
     }
 
     biases = {
@@ -57,9 +56,67 @@ def basic_vcnn(n_labels):
     return x, y, weights, biases, out
 
 
+def vgg(n_labels):
+    x = tf.placeholder(tf.float32, [None, input_dim, input_dim, input_dim])
+    y = tf.placeholder(tf.float32, [None, n_labels])
+
+    weights = {
+        'c1': tf.Variable(tf.random_normal([3, 3, 3, 1, 32]), name='wc1'),
+        'c2': tf.Variable(tf.random_normal([3, 3, 3, 32, 32]), name='wc2'),
+
+        'c3': tf.Variable(tf.random_normal([3, 3, 3, 32, 48]), name='wc3'),
+        'c4': tf.Variable(tf.random_normal([3, 3, 3, 48, 48]), name='wc4'),
+
+        'c5': tf.Variable(tf.random_normal([3, 3, 3, 48, 64]), name='wc5'),
+        'c6': tf.Variable(tf.random_normal([3, 3, 3, 64, 64]), name='wc6'),
+        'c7': tf.Variable(tf.random_normal([3, 3, 3, 64, 64]), name='wc7'),
+
+        'fc1': tf.Variable(tf.random_normal([4 * 4 * 4 * 64, 512]), name='wfc1'),
+        'fc2': tf.Variable(tf.random_normal([512, n_labels]), name='wfc2'),
+    }
+
+    biases = {
+        'c1': tf.Variable(tf.random_normal([weights['c1'].get_shape().as_list()[-1]]), name='bc1'),
+        'c2': tf.Variable(tf.random_normal([weights['c2'].get_shape().as_list()[-1]]), name='bc2'),
+        'c3': tf.Variable(tf.random_normal([weights['c3'].get_shape().as_list()[-1]]), name='bc3'),
+        'c4': tf.Variable(tf.random_normal([weights['c4'].get_shape().as_list()[-1]]), name='bc4'),
+        'c5': tf.Variable(tf.random_normal([weights['c5'].get_shape().as_list()[-1]]), name='bc5'),
+        'c6': tf.Variable(tf.random_normal([weights['c6'].get_shape().as_list()[-1]]), name='bc6'),
+        'c7': tf.Variable(tf.random_normal([weights['c7'].get_shape().as_list()[-1]]), name='bc7'),
+        'fc1': tf.Variable(tf.random_normal([weights['fc1'].get_shape().as_list()[-1]]), name='bfc1'),
+        'fc2': tf.Variable(tf.random_normal([weights['fc2'].get_shape().as_list()[-1]]), name='bfc2'),
+    }
+
+    # Reshape input
+    x_in = tf.reshape(x, shape=[-1, input_dim, input_dim, input_dim, 1])
+
+    # Convolution Layers
+    c1 = conv_relu(x_in, weights['c1'], biases['c1'], [1, 1, 1, 1, 1])
+    c2 = conv_relu(c1, weights['c2'], biases['c2'], [1, 1, 1, 1, 1])
+    c2 = tf.nn.max_pool3d(c2, ksize=[1, 2, 2, 2, 1], strides=[1, 2, 2, 2, 1], padding='SAME')
+
+    c3 = conv_relu(c2, weights['c3'], biases['c3'], [1, 1, 1, 1, 1])
+    c4 = conv_relu(c3, weights['c4'], biases['c4'], [1, 1, 1, 1, 1])
+    c4 = tf.nn.max_pool3d(c4, ksize=[1, 2, 2, 2, 1], strides=[1, 2, 2, 2, 1], padding='SAME')
+
+    c5 = conv_relu(c4, weights['c5'], biases['c5'], [1, 1, 1, 1, 1])
+    c6 = conv_relu(c5, weights['c6'], biases['c6'], [1, 1, 1, 1, 1])
+    c7 = conv_relu(c6, weights['c7'], biases['c7'], [1, 1, 1, 1, 1])
+    c7 = tf.nn.max_pool3d(c7, ksize=[1, 2, 2, 2, 1], strides=[1, 2, 2, 2, 1], padding='SAME')
+
+    # Fully connected layers
+    fc1 = tf.reshape(c7, [-1, weights['fc1'].get_shape().as_list()[0]])
+    fc1 = tf.add(tf.matmul(fc1, weights['fc1']), biases['fc1'])
+    fc1 = tf.nn.relu(fc1)
+
+    # Output, class prediction
+    out = tf.add(tf.matmul(fc1, weights['fc2']), biases['fc2'])
+    return x, y, weights, biases, out
+
+
 def aniprobing():
 
-    x = tf.placeholder(tf.float32, [None, 60, 60, 60])
+    x = tf.placeholder(tf.float32, [None, input_dim, input_dim, input_dim])
     y = tf.placeholder(tf.float32, [None, 10])
 
     weights = {
@@ -103,6 +160,12 @@ def aniprobing():
     return x, y, weights, biases, out
 
 
+def conv_relu(x, weight, bias, strides):
+    x = tf.nn.conv3d(x, weight, strides=strides, padding='SAME')
+    x = tf.nn.bias_add(x, bias)
+    x = tf.nn.relu(x)
+    return x
+
 def mlpconv3d(x, weight, bias, strides):
     x = tf.nn.conv3d(x, weight, strides=strides, padding='SAME')
     x = tf.nn.bias_add(x, bias)
@@ -119,12 +182,12 @@ def mlpconv2d(x, weight, bias, strides):
     return x
 
 
-def main(n_labels):
+def main(model, n_labels):
 
     dl.prepare_train_val_data(train_filename, train_ratio=0.9)
 
     # Construct model
-    x, y, weights, biases, pred = basic_vcnn(n_labels)
+    x, y, weights, biases, pred = model(n_labels)
 
     # Define loss and optimizer
     with tf.name_scope('Loss'):
@@ -195,9 +258,15 @@ def main(n_labels):
         print("---Final model saved in file: " + save_path)
 
 
+model_selector = {
+    'basic_vcnn': basic_vcnn,
+    'vgg': vgg
+}
+
 if __name__ == '__main__':
-    train_filename = sys.argv[1]
-    n_labels = int(sys.argv[2])
+    model_name = sys.argv[1]
+    train_filename = sys.argv[2]
+    n_labels = int(sys.argv[3])
 
     model_name_with_metadata = model_name + '_' + train_filename.split('.')[0] + '_' \
                                + str(dt.datetime.utcnow()).replace(' ', '_').split('.')[0]
@@ -205,4 +274,4 @@ if __name__ == '__main__':
     valid_logs_path = '/tmp/tensorflow_logs/' + model_name_with_metadata + '_valid'
     model_path = model_name_with_metadata + '.ckpt'
 
-    main(n_labels)
+    main(model_selector[model_name], n_labels)

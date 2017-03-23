@@ -2,17 +2,18 @@ import sys
 import numpy as np
 import tensorflow as tf
 from data_loader import dl
-from vcnn_train import batch_size, basic_vcnn
+from vcnn_train import batch_size, model_selector
 
 
 test_filename = sys.argv[1]
-model_filename = './' + sys.argv[2]
-n_labels = int(sys.argv[3])
+model_name = sys.argv[2]
+model_filename = './' + sys.argv[3]
+n_labels = int(sys.argv[4])
 
 
 def main():
     dl.prepare_test_data(test_filename)
-    x, y, weights, biases, pred = basic_vcnn(n_labels)
+    x, y, weights, biases, pred = model_selector[model_name](n_labels)
     saver = tf.train.Saver()
 
     with tf.Session() as sess:
