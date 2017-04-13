@@ -18,17 +18,25 @@ def main():
     subplot_i = 1
     grid_size = np.ceil(np.sqrt(n_shown))
     for i in range(0, c1_weights.shape[0]):
-    # for i in range(0, 1):
+    # for i in range(0, 2):
         mlab.figure(size=(480, 340))
+
+        # xx, yy, zz = np.where(c1_weights[i] > 0)
+        # ss = c1_weights[i][xx, yy, zz] - c1_weights.min() / c1_range
+        # mlab.points3d(xx, yy, zz, ss,
+        #               mode="cube",
+        #               color=(0, 1, 0),
+        #               scale_factor=1,
+        #               scale_mode='scalar')
+
         for x in range(0, c1_weights.shape[1]):
             for y in range(0, c1_weights.shape[2]):
                 for z in range(0, c1_weights.shape[3]):
-                    alpha = float((c1_weights[i, x, y, z] - c1_weights.min()) / c1_range)
+                    a = float((c1_weights[i, x, y, z] - c1_weights.min()) / c1_range)
                     mlab.points3d(x, y, z,
                                   mode="cube",
-                                  color=(0, 1, 1),
-                                  opacity=alpha,
-                                  scale_factor=1)
+                                  color=(0, a, 0),
+                                  scale_factor=a)
         img = mlab.screenshot()
         mlab.close()
 

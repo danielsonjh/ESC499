@@ -32,11 +32,15 @@ def basic_vcnn(n_labels):
 
     # Reshape input
     x_in = tf.reshape(x, shape=[-1, input_dim, input_dim, input_dim, 1])
+    # x_in = tf.nn.avg_pool3d(x_in, ksize=[1, 4, 4, 4, 1], strides=[1, 4, 4, 4, 1], padding='SAME')
+
+    print(x_in.get_shape())
 
     # Convolution Layers
     c1 = tf.nn.conv3d(x_in, weights['c1'], strides=[1, 2, 2, 2, 1], padding='SAME')
     c1 = tf.nn.bias_add(c1, biases['c1'])
     c1 = tf.nn.relu(c1)
+    # c1 = tf.nn.avg_pool3d(c1, ksize=[1, 2, 2, 2, 1], strides=[1, 2, 2, 2, 1], padding='SAME')
     # c1 = tf.nn.dropout(c1, 0.8)
 
     c2 = tf.nn.conv3d(c1, weights['c2'], strides=[1, 1, 1, 1, 1], padding='SAME')

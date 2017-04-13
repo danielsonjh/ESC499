@@ -3,7 +3,7 @@ import binvox_rw
 import os
 
 
-input_dir = '../ModelNet10_binvox_60'
+input_dir = '../ModelNet10_binvox_15'
 
 
 def extract_data(path_prefix, set_name):

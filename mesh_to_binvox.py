@@ -2,10 +2,10 @@ import os
 import shutil
 import logging
 
-input_dir = '../scene_components'
-size = 30
+input_dir = '../ModelNet10'
+size = 15
 output_dir = input_dir + '_binvox_' + str(size)
-file_ext = '.obj'
+file_ext = '.off'
 
 
 def main():

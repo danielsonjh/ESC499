@@ -21,6 +21,13 @@ pred = data['incorrect_cases_pred']
 length = x.shape[0]
 random_indices = random.sample(range(0, length), n_shown)
 
+# most_incorrect_indices = []
+# for i in range(0, length):
+#     lowest_preds = np.argsort(y[i])[:2]
+#     actual_label = np.argmax(y[i])
+#     if  actual_label in lowest_preds:
+#         most_incorrect_indices.append(i)
+
 fig = plt.figure()
 subplot_i = 1
 for i in random_indices:
@@ -31,7 +38,7 @@ for i in random_indices:
                   color=(0, 1, 0),
                   scale_factor=1)
     img = mlab.screenshot()
-    mlab.close()
+    # mlab.close()
 
     ax1 = fig.add_subplot(2, n_shown, subplot_i)
     ax1.imshow(img)
